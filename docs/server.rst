@@ -267,6 +267,30 @@ The disconnect handler receives the ``sid`` assigned to the client and a
 See the The :attr:`socketio.Server.reason` attribute for a list of possible
 disconnection reasons.
 
+Pong Event
+~~~~~~~~~~
+
+The ``pong_received`` event is triggered when the server receives an Engine.IO
+pong packet from a client in response to a ping. This can be useful for
+extending session TTLs or tracking client activity::
+
+    @sio.on('pong_received')
+    def handle_pong(sid):
+        print('pong received from', sid)
+
+For asyncio servers::
+
+    @sio.on('pong_received')
+    async def handle_pong(sid):
+        print('pong received from', sid)
+
+The handler receives only the ``sid`` argument. A typical use case is to extend
+the expiration time of session data stored in an external database::
+
+    @sio.on('pong_received')
+    def handle_pong(sid):
+        redis_client.expire(f"session:{sid}", 3600)
+
 Catch-All Event Handlers
 ~~~~~~~~~~~~~~~~~~~~~~~~
 

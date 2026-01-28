@@ -742,6 +742,28 @@ class TestServer:
         with pytest.raises(ValueError):
             s._handle_eio_message('123', '9')
 
+    def test_handle_pong_received(self, eio):
+        s = server.Server(async_handlers=False)
+        s.manager.connect('123', '/')
+        handler = mock.MagicMock()
+        s.on('pong_received', handler)
+        s._handle_eio_message('123', '3')
+        handler.assert_called_once_with('1')
+
+    def test_handle_pong_received_no_handler(self, eio):
+        s = server.Server(async_handlers=False)
+        s.manager.connect('123', '/')
+        # should not raise when no handler is registered
+        s._handle_eio_message('123', '3')
+
+    def test_handle_pong_received_not_connected(self, eio):
+        s = server.Server(async_handlers=False)
+        handler = mock.MagicMock()
+        s.on('pong_received', handler)
+        # should not trigger event when client is not connected
+        s._handle_eio_message('123', '3')
+        handler.assert_not_called()
+
     def test_send_with_ack(self, eio):
         s = server.Server()
         s.handlers['/'] = {}

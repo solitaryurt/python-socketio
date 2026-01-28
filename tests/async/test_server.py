@@ -793,6 +793,36 @@ class TestAsyncServer:
         with pytest.raises(ValueError):
             await s._handle_eio_message('123', '9')
 
+    async def test_handle_pong_received(self, eio):
+        s = async_server.AsyncServer(async_handlers=False)
+        await s.manager.connect('123', '/')
+        handler = mock.AsyncMock()
+        s.on('pong_received', handler)
+        await s._handle_eio_message('123', '3')
+        handler.assert_awaited_once_with('1')
+
+    async def test_handle_pong_received_sync_handler(self, eio):
+        s = async_server.AsyncServer(async_handlers=False)
+        await s.manager.connect('123', '/')
+        handler = mock.MagicMock()
+        s.on('pong_received', handler)
+        await s._handle_eio_message('123', '3')
+        handler.assert_called_once_with('1')
+
+    async def test_handle_pong_received_no_handler(self, eio):
+        s = async_server.AsyncServer(async_handlers=False)
+        await s.manager.connect('123', '/')
+        # should not raise when no handler is registered
+        await s._handle_eio_message('123', '3')
+
+    async def test_handle_pong_received_not_connected(self, eio):
+        s = async_server.AsyncServer(async_handlers=False)
+        handler = mock.AsyncMock()
+        s.on('pong_received', handler)
+        # should not trigger event when client is not connected
+        await s._handle_eio_message('123', '3')
+        handler.assert_not_awaited()
+
     async def test_send_with_ack(self, eio):
         eio.return_value.send = mock.AsyncMock()
         s = async_server.AsyncServer()

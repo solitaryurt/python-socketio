@@ -640,6 +640,12 @@ class Server(base_server.BaseServer):
 
     def _handle_eio_message(self, eio_sid, data):
         """Dispatch Engine.IO messages."""
+        # detect Engine.IO pong packet and trigger synthetic event
+        if isinstance(data, str) and data.startswith('3'):
+            sid = self.manager.sid_from_eio_sid(eio_sid, '/')
+            if sid:
+                self._trigger_event('pong_received', '/', sid)
+            return
         if eio_sid in self._binary_packet:
             pkt = self._binary_packet[eio_sid]
             if pkt.add_attachment(data):
