@@ -742,26 +742,45 @@ class TestServer:
         with pytest.raises(ValueError):
             s._handle_eio_message('123', '9')
 
-    def test_handle_pong_received(self, eio):
+    def test_handle_ping_received(self, eio):
         s = server.Server(async_handlers=False)
-        s.manager.connect('123', '/')
+        mock_socket = mock.MagicMock()
+        mock_socket.receive = mock.MagicMock()
+        s.eio.sockets = {'123': mock_socket}
         handler = mock.MagicMock()
-        s.on('pong_received', handler)
-        s._handle_eio_message('123', '3')
+        s.on('ping_received', handler)
+        s._handle_eio_connect('123', 'environ')
+        s.manager.connect('123', '/')
+        # simulate receiving a PONG packet
+        mock_pkt = mock.MagicMock()
+        mock_pkt.packet_type = 3  # PONG
+        mock_socket.receive(mock_pkt)
         handler.assert_called_once_with('1')
 
-    def test_handle_pong_received_no_handler(self, eio):
+    def test_handle_ping_received_no_handler(self, eio):
         s = server.Server(async_handlers=False)
+        mock_socket = mock.MagicMock()
+        mock_socket.receive = mock.MagicMock()
+        s.eio.sockets = {'123': mock_socket}
+        s._handle_eio_connect('123', 'environ')
         s.manager.connect('123', '/')
         # should not raise when no handler is registered
-        s._handle_eio_message('123', '3')
+        mock_pkt = mock.MagicMock()
+        mock_pkt.packet_type = 3  # PONG
+        mock_socket.receive(mock_pkt)
 
-    def test_handle_pong_received_not_connected(self, eio):
+    def test_handle_ping_received_not_connected(self, eio):
         s = server.Server(async_handlers=False)
+        mock_socket = mock.MagicMock()
+        mock_socket.receive = mock.MagicMock()
+        s.eio.sockets = {'123': mock_socket}
         handler = mock.MagicMock()
-        s.on('pong_received', handler)
-        # should not trigger event when client is not connected
-        s._handle_eio_message('123', '3')
+        s.on('ping_received', handler)
+        s._handle_eio_connect('123', 'environ')
+        # don't connect to manager, so sid_from_eio_sid returns None
+        mock_pkt = mock.MagicMock()
+        mock_pkt.packet_type = 3  # PONG
+        mock_socket.receive(mock_pkt)
         handler.assert_not_called()
 
     def test_send_with_ack(self, eio):

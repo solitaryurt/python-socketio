@@ -793,34 +793,60 @@ class TestAsyncServer:
         with pytest.raises(ValueError):
             await s._handle_eio_message('123', '9')
 
-    async def test_handle_pong_received(self, eio):
+    async def test_handle_ping_received(self, eio):
         s = async_server.AsyncServer(async_handlers=False)
-        await s.manager.connect('123', '/')
+        mock_socket = mock.MagicMock()
+        mock_socket.receive = mock.AsyncMock()
+        s.eio.sockets = {'123': mock_socket}
         handler = mock.AsyncMock()
-        s.on('pong_received', handler)
-        await s._handle_eio_message('123', '3')
+        s.on('ping_received', handler)
+        await s._handle_eio_connect('123', 'environ')
+        await s.manager.connect('123', '/')
+        # simulate receiving a PONG packet
+        mock_pkt = mock.MagicMock()
+        mock_pkt.packet_type = 3  # PONG
+        await mock_socket.receive(mock_pkt)
         handler.assert_awaited_once_with('1')
 
-    async def test_handle_pong_received_sync_handler(self, eio):
+    async def test_handle_ping_received_sync_handler(self, eio):
         s = async_server.AsyncServer(async_handlers=False)
-        await s.manager.connect('123', '/')
+        mock_socket = mock.MagicMock()
+        mock_socket.receive = mock.AsyncMock()
+        s.eio.sockets = {'123': mock_socket}
         handler = mock.MagicMock()
-        s.on('pong_received', handler)
-        await s._handle_eio_message('123', '3')
+        s.on('ping_received', handler)
+        await s._handle_eio_connect('123', 'environ')
+        await s.manager.connect('123', '/')
+        # simulate receiving a PONG packet
+        mock_pkt = mock.MagicMock()
+        mock_pkt.packet_type = 3  # PONG
+        await mock_socket.receive(mock_pkt)
         handler.assert_called_once_with('1')
 
-    async def test_handle_pong_received_no_handler(self, eio):
+    async def test_handle_ping_received_no_handler(self, eio):
         s = async_server.AsyncServer(async_handlers=False)
+        mock_socket = mock.MagicMock()
+        mock_socket.receive = mock.AsyncMock()
+        s.eio.sockets = {'123': mock_socket}
+        await s._handle_eio_connect('123', 'environ')
         await s.manager.connect('123', '/')
         # should not raise when no handler is registered
-        await s._handle_eio_message('123', '3')
+        mock_pkt = mock.MagicMock()
+        mock_pkt.packet_type = 3  # PONG
+        await mock_socket.receive(mock_pkt)
 
-    async def test_handle_pong_received_not_connected(self, eio):
+    async def test_handle_ping_received_not_connected(self, eio):
         s = async_server.AsyncServer(async_handlers=False)
+        mock_socket = mock.MagicMock()
+        mock_socket.receive = mock.AsyncMock()
+        s.eio.sockets = {'123': mock_socket}
         handler = mock.AsyncMock()
-        s.on('pong_received', handler)
-        # should not trigger event when client is not connected
-        await s._handle_eio_message('123', '3')
+        s.on('ping_received', handler)
+        await s._handle_eio_connect('123', 'environ')
+        # don't connect to manager, so sid_from_eio_sid returns None
+        mock_pkt = mock.MagicMock()
+        mock_pkt.packet_type = 3  # PONG
+        await mock_socket.receive(mock_pkt)
         handler.assert_not_awaited()
 
     async def test_send_with_ack(self, eio):

@@ -105,9 +105,9 @@ class BaseServer:
           the client and the WSGI environment dictionary as arguments.
         - The ``'disconnect'`` handler receives the ``sid`` for the client as
           only argument.
-        - The ``'pong_received'`` handler receives the ``sid`` for the client
+        - The ``'ping_received'`` handler receives the ``sid`` for the client
           as only argument. This event is triggered when an Engine.IO pong
-          packet is received from the client.
+          packet is received from the client in response to a ping.
         - The ``'message'`` handler and handlers for custom event names receive
           the ``sid`` for the client and the message payload as arguments. Any
           values returned from a message handler will be passed to the client's

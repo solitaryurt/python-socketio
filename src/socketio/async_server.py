@@ -674,14 +674,23 @@ class AsyncServer(base_server.BaseServer):
             self.manager.initialize()
         self.environ[eio_sid] = environ
 
+        # wrap socket to intercept pong packets
+        socket = self.eio.sockets.get(eio_sid)
+        if socket:
+            original_receive = socket.receive
+            server = self
+
+            async def wrapped_receive(pkt):
+                result = await original_receive(pkt)
+                if pkt.packet_type == 3:  # PONG
+                    sid = server.manager.sid_from_eio_sid(eio_sid, '/')
+                    if sid:
+                        await server._trigger_event('ping_received', '/', sid)
+                return result
+            socket.receive = wrapped_receive
+
     async def _handle_eio_message(self, eio_sid, data):
         """Dispatch Engine.IO messages."""
-        # detect Engine.IO pong packet and trigger synthetic event
-        if isinstance(data, str) and data.startswith('3'):
-            sid = self.manager.sid_from_eio_sid(eio_sid, '/')
-            if sid:
-                await self._trigger_event('pong_received', '/', sid)
-            return
         if eio_sid in self._binary_packet:
             pkt = self._binary_packet[eio_sid]
             if pkt.add_attachment(data):
