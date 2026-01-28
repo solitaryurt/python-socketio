@@ -675,5 +675,12 @@ class Server(base_server.BaseServer):
         if eio_sid in self.environ:
             del self.environ[eio_sid]
 
+    def _handle_eio_pong(self, eio_sid):
+        """Handle Engine.IO pong event."""
+        for n in list(self.manager.get_namespaces()).copy():
+            sid = self.manager.sid_from_eio_sid(eio_sid, n)
+            if sid and self.manager.is_connected(sid, n):
+                self._trigger_event('pong', n, sid)
+
     def _engineio_server_class(self):
         return engineio.Server

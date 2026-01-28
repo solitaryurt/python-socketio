@@ -714,5 +714,16 @@ class AsyncServer(base_server.BaseServer):
         if eio_sid in self.environ:
             del self.environ[eio_sid]
 
+    async def _handle_eio_pong(self, eio_sid):
+        """Handle Engine.IO pong event."""
+        namespaces = list(self.manager.get_namespaces()).copy()
+        self.logger.debug(f'_handle_eio_pong: eio_sid={eio_sid}, namespaces={namespaces}')
+        for n in namespaces:
+            sid = self.manager.sid_from_eio_sid(eio_sid, n)
+            is_connected = self.manager.is_connected(sid, n) if sid else False
+            self.logger.debug(f'_handle_eio_pong: namespace={n}, sid={sid}, is_connected={is_connected}')
+            if sid and is_connected:
+                await self._trigger_event('pong', n, sid)
+
     def _engineio_server_class(self):
         return engineio.AsyncServer

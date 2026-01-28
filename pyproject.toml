@@ -15,7 +15,7 @@ classifiers = [
 requires-python = ">=3.8"
 dependencies = [
     "bidict >= 0.21.0",
-    "python-engineio >= 4.11.0",
+    "python-engineio @ git+https://github.com/solitaryurt/python-engineio.git@a99a9aa69e3dccfbd336bd489fd799eab12cb3da",
 ]
 
 [project.readme]

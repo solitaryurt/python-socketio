@@ -35,6 +35,7 @@ class BaseServer:
         self.eio.on('connect', self._handle_eio_connect)
         self.eio.on('message', self._handle_eio_message)
         self.eio.on('disconnect', self._handle_eio_disconnect)
+        self.eio.on('pong', self._handle_eio_pong)
 
         self.environ = {}
         self.handlers = {}
@@ -260,6 +261,9 @@ class BaseServer:
         raise NotImplementedError()
 
     def _handle_eio_disconnect(self):  # pragma: no cover
+        raise NotImplementedError()
+
+    def _handle_eio_pong(self):  # pragma: no cover
         raise NotImplementedError()
 
     def _engineio_server_class(self):  # pragma: no cover
